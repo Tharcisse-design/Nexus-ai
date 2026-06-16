@@ -94,7 +94,7 @@ function setupSmoothScroll() {
 
 // WhatsApp Button
 function openWhatsApp() {
-    const phoneNumber = '1234567890'; // Remplacez par votre numéro
+    const phoneNumber = '243853981699';
     const message = 'Bonjour, je souhaite discuter des services de Nexus AI.';
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, '_blank');
