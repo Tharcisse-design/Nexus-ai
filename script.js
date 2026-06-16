@@ -1,4 +1,4 @@
-/* ===== NEXUS AI SCRIPT ===== */
+/* ===== NEXUS AI ENHANCED SCRIPT ===== */
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,9 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp() {
     setupMobileMenu();
-    setupFAQ();
+    setupContactForm();
     setupScrollAnimations();
     setupSmoothScroll();
+    setupLiveChat();
+    setupAnalytics();
+    setupSEO();
 }
 
 // Mobile Menu
@@ -23,7 +26,6 @@ function setupMobileMenu() {
             hamburger.classList.toggle('active');
         });
 
-        // Close menu when link is clicked
         document.querySelectorAll('.nav-menu a').forEach(link => {
             link.addEventListener('click', () => {
                 navMenu.style.display = 'none';
@@ -33,25 +35,65 @@ function setupMobileMenu() {
     }
 }
 
-// FAQ Accordion
-function setupFAQ() {
-    const faqItems = document.querySelectorAll('.faq-item');
+// Contact Form
+function setupContactForm() {
+    const form = document.getElementById('contactForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                company: document.getElementById('company').value,
+                phone: document.getElementById('phone').value,
+                service: document.getElementById('service').value,
+                message: document.getElementById('message').value,
+                timestamp: new Date().toISOString()
+            };
 
-    faqItems.forEach(item => {
-        const question = item.querySelector('.faq-question');
-        
-        question.addEventListener('click', () => {
-            // Close other items
-            faqItems.forEach(otherItem => {
-                if (otherItem !== item) {
-                    otherItem.classList.remove('active');
-                }
-            });
+            // Store in localStorage for demo
+            const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
+            submissions.push(formData);
+            localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
 
-            // Toggle current item
-            item.classList.toggle('active');
+            // Send email notification
+            sendEmailNotification(formData);
+
+            // Show success message
+            showNotification('Message envoyé avec succès! ✅', 'success');
+            form.reset();
+
+            // Track event
+            trackEvent('contact_form_submitted', formData);
         });
-    });
+    }
+}
+
+// Send Email Notification
+async function sendEmailNotification(formData) {
+    try {
+        // Utiliser EmailJS ou un service backend
+        const emailData = {
+            to_email: 'contact@nexus-ai.com',
+            from_email: formData.email,
+            from_name: formData.name,
+            subject: `Nouveau message de ${formData.name}`,
+            message: `
+                Nom: ${formData.name}
+                Email: ${formData.email}
+                Entreprise: ${formData.company}
+                Téléphone: ${formData.phone}
+                Service: ${formData.service}
+                Message: ${formData.message}
+            `
+        };
+
+        // Note: À intégrer avec EmailJS ou backend
+        console.log('Email notification:', emailData);
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
 }
 
 // Scroll Animations
@@ -70,8 +112,7 @@ function setupScrollAnimations() {
         });
     }, observerOptions);
 
-    // Observe all cards and sections
-    document.querySelectorAll('.service-card, .advantage-card, .testimonial-card, .pricing-card, .faq-item').forEach(el => {
+    document.querySelectorAll('.service-card, .blog-card, .why-card, .pricing-card, .info-card').forEach(el => {
         observer.observe(el);
     });
 }
@@ -100,6 +141,83 @@ function openWhatsApp() {
     window.open(whatsappURL, '_blank');
 }
 
+// Live Chat
+function setupLiveChat() {
+    const chatButton = document.querySelector('.chat-button');
+    const liveChatWidget = document.getElementById('liveChatWidget');
+
+    if (chatButton) {
+        chatButton.addEventListener('click', toggleChat);
+    }
+
+    // Auto-show chat after 5 seconds
+    setTimeout(() => {
+        if (!sessionStorage.getItem('chatShown')) {
+            toggleChat();
+            sessionStorage.setItem('chatShown', 'true');
+        }
+    }, 5000);
+}
+
+function toggleChat() {
+    const widget = document.getElementById('liveChatWidget');
+    const button = document.querySelector('.chat-button');
+    
+    if (widget.classList.contains('open')) {
+        widget.classList.remove('open');
+        button.innerHTML = '<i class="fas fa-comments"></i>';
+    } else {
+        widget.classList.add('open');
+        button.innerHTML = '<i class="fas fa-times"></i>';
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    // Add user message
+    const messagesContainer = document.getElementById('chatMessages');
+    const userMessageEl = document.createElement('div');
+    userMessageEl.className = 'chat-message user-message';
+    userMessageEl.innerHTML = `<p>${message}</p>`;
+    messagesContainer.appendChild(userMessageEl);
+
+    input.value = '';
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // Simulate bot response
+    setTimeout(() => {
+        const botMessageEl = document.createElement('div');
+        botMessageEl.className = 'chat-message bot-message';
+        botMessageEl.innerHTML = `<p>Merci pour votre message! Notre équipe vous répondra bientôt. 👋</p>`;
+        messagesContainer.appendChild(botMessageEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        trackEvent('chat_message_sent', { message });
+    }, 1000);
+}
+
+// Stripe Checkout
+function openStripeCheckout(plan) {
+    const prices = {
+        starter: 'price_starter_123', // Replace with actual Stripe price ID
+        growth: 'price_growth_456'
+    };
+
+    const stripe = Stripe('pk_test_YOUR_STRIPE_KEY'); // Replace with actual key
+    stripe.redirectToCheckout({
+        lineItems: [{ price: prices[plan], quantity: 1 }],
+        mode: 'subscription',
+        successUrl: window.location.href + '?success=true',
+        cancelUrl: window.location.href
+    });
+
+    trackEvent('checkout_initiated', { plan });
+}
+
 // Navbar Background on Scroll
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
@@ -126,7 +244,6 @@ document.addEventListener('mousemove', (e) => {
     const mouseX = e.clientX / window.innerWidth;
     const mouseY = e.clientY / window.innerHeight;
     
-    // Update blob positions slightly based on mouse
     const blobs = document.querySelectorAll('.blob');
     blobs.forEach((blob, index) => {
         const speed = 5 + index * 2;
@@ -167,17 +284,6 @@ document.querySelectorAll('.stat-number').forEach(el => {
     statObserver.observe(el);
 });
 
-// Service Card Hover Effect
-document.querySelectorAll('.service-card').forEach(card => {
-    card.addEventListener('mouseenter', function() {
-        this.style.boxShadow = '0 20px 50px rgba(0, 212, 255, 0.2)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-        this.style.boxShadow = '0 0 0 transparent';
-    });
-});
-
 // Active Link Highlight on Scroll
 window.addEventListener('scroll', () => {
     let current = '';
@@ -200,7 +306,7 @@ window.addEventListener('scroll', () => {
     });
 });
 
-// Form Validation (if needed)
+// Form Validation
 function validateForm(form) {
     const inputs = form.querySelectorAll('input, textarea');
     let isValid = true;
@@ -217,20 +323,60 @@ function validateForm(form) {
     return isValid;
 }
 
-// Add Loading Animation
-function showLoading() {
-    const loader = document.createElement('div');
-    loader.className = 'loader';
-    loader.innerHTML = '<div class="spinner"></div>';
-    document.body.appendChild(loader);
+// Notification System
+function showNotification(message, type = 'success', duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideInNotification 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, duration);
 }
 
-function hideLoading() {
-    const loader = document.querySelector('.loader');
-    if (loader) loader.remove();
-}
+// Export Functions for Global Use
+window.App = {
+    openWhatsApp,
+    toggleChat,
+    sendChatMessage,
+    openStripeCheckout,
+    showNotification,
+    validateForm
+};
 
-// Utility: Debounce Function
+// Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + ? for help
+    if ((e.ctrlKey || e.metaKey) && e.key === '?') {
+        e.preventDefault();
+        console.log('Help: Press Ctrl+M for mobile menu toggle');
+    }
+
+    // Escape to close chat
+    if (e.key === 'Escape') {
+        const widget = document.getElementById('liveChatWidget');
+        if (widget && widget.classList.contains('open')) {
+            toggleChat();
+        }
+    }
+});
+
+// Debounce Function
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -243,7 +389,7 @@ function debounce(func, wait) {
     };
 }
 
-// Utility: Throttle Function
+// Throttle Function
 function throttle(func, limit) {
     let inThrottle;
     return function(...args) {
@@ -255,7 +401,7 @@ function throttle(func, limit) {
     };
 }
 
-// Performance: Lazy Load Images
+// Lazy Load Images
 if ('IntersectionObserver' in window) {
     const imageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -273,94 +419,159 @@ if ('IntersectionObserver' in window) {
     });
 }
 
-// Clipboard Copy Function
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Copié au presse-papiers!');
-    }).catch(err => {
-        console.error('Erreur:', err);
+// ===== ANALYTICS =====
+function setupAnalytics() {
+    // Google Analytics
+    if (window.location.hostname !== 'localhost') {
+        setupGoogleAnalytics();
+    }
+
+    // Track page views
+    trackEvent('page_view', {
+        page: window.location.pathname,
+        title: document.title
+    });
+
+    // Track user interactions
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-primary')) {
+            trackEvent('cta_click', {
+                text: e.target.textContent,
+                location: e.target.parentElement.className
+            });
+        }
     });
 }
 
-// Notification System
-function showNotification(message, type = 'success', duration = 3000) {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, duration);
+function setupGoogleAnalytics() {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID'); // Replace with actual ID
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID';
+    document.head.appendChild(script);
 }
 
-// Export Functions for Global Use
-window.App = {
-    openWhatsApp,
-    copyToClipboard,
-    showNotification,
-    validateForm,
-    showLoading,
-    hideLoading
-};
-
-// Keyboard Shortcuts
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + K for search (example)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        // Add search functionality here
+function trackEvent(eventName, eventData = {}) {
+    // Google Analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', eventName, eventData);
     }
 
-    // Escape to close menus
-    if (e.key === 'Escape') {
-        const navMenu = document.querySelector('.nav-menu');
-        if (navMenu) {
-            navMenu.style.display = 'none';
-            document.querySelector('.hamburger').classList.remove('active');
+    // Local tracking
+    const events = JSON.parse(localStorage.getItem('userEvents') || '[]');
+    events.push({
+        event: eventName,
+        data: eventData,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('userEvents', JSON.stringify(events.slice(-100)));
+
+    console.log('Event tracked:', eventName, eventData);
+}
+
+// ===== SEO OPTIMIZATION =====
+function setupSEO() {
+    // Structured Data (Schema.org)
+    addStructuredData();
+
+    // Dynamic meta tags
+    updateMetaTags();
+
+    // Sitemap reference
+    addSitemapReference();
+
+    // Robots.txt reference
+    addRobotsReference();
+}
+
+function addStructuredData() {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        'name': 'Nexus AI',
+        'url': window.location.href,
+        'logo': 'https://nexus-ai.netlify.app/logo.png',
+        'description': 'Solutions IA révolutionnaires pour transformer votre business',
+        'sameAs': [
+            'https://linkedin.com/company/nexus-ai',
+            'https://twitter.com/nexus-ai'
+        ],
+        'contactPoint': {
+            '@type': 'ContactPoint',
+            'contactType': 'Customer Service',
+            'telephone': '+243853981699',
+            'email': 'contact@nexus-ai.com'
+        }
+    });
+    document.head.appendChild(script);
+}
+
+function updateMetaTags() {
+    const metas = {
+        'og:image': 'https://nexus-ai.netlify.app/og-image.png',
+        'twitter:card': 'summary_large_image',
+        'twitter:title': 'Nexus AI - Solutions IA Premium',
+        'twitter:description': 'Transformez votre business avec l\'IA',
+        'twitter:image': 'https://nexus-ai.netlify.app/og-image.png'
+    };
+
+    for (const [name, content] of Object.entries(metas)) {
+        const meta = document.querySelector(`meta[property="${name}"], meta[name="${name}"]`);
+        if (meta) {
+            meta.content = content;
         }
     }
-});
+}
 
-// Service Worker Registration (for PWA)
-if ('serviceWorker' in navigator) {
+function addSitemapReference() {
+    const link = document.createElement('link');
+    link.rel = 'sitemap';
+    link.type = 'application/xml';
+    link.href = '/sitemap.xml';
+    document.head.appendChild(link);
+}
+
+function addRobotsReference() {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
+    document.head.appendChild(meta);
+}
+
+// Performance monitoring
+function setupPerformanceMonitoring() {
+    if ('PerformanceObserver' in window) {
+        const observer = new PerformanceObserver((list) => {
+            list.getEntries().forEach((entry) => {
+                console.log(`${entry.name}: ${entry.duration}ms`);
+                trackEvent('performance_metric', {
+                    name: entry.name,
+                    duration: entry.duration
+                });
+            });
+        });
+
+        observer.observe({ entryTypes: ['measure'] });
+    }
+}
+
+// Initialize on load
+setupPerformanceMonitoring();
+
+// Service Worker Registration
+if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
     navigator.serviceWorker.register('/sw.js').catch(err => {
         console.log('Service Worker registration failed:', err);
     });
 }
 
-// Analytics Integration (Example - replace with your tracking code)
-function trackEvent(eventName, eventData = {}) {
-    console.log('Event:', eventName, eventData);
-    // Add your analytics code here (Google Analytics, Hotjar, etc.)
-}
-
-// Initialize Animations on Scroll
-const animateOnScroll = debounce(() => {
-    document.querySelectorAll('.fade-in').forEach(el => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0) {
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
-        }
-    });
-}, 100);
-
-window.addEventListener('scroll', animateOnScroll);
-
-// Log Initialization
-console.log('%cNexus AI initialized! 🚀', 'color: #00d4ff; font-size: 16px; font-weight: bold;');
+// Console message
+console.log('%cNexus AI - IA Premium Solutions 🚀', 'color: #00d4ff; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(0,212,255,0.5);');
+console.log('%cContactez-nous: +243 853 981 699', 'color: #10b981; font-size: 14px;');
+console.log('%cEmail: contact@nexus-ai.com', 'color: #10b981; font-size: 14px;');
